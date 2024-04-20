@@ -8,6 +8,7 @@ import pickle
 import datetime
 import requests
 from dotenv import load_dotenv
+from typing import Union
 
 load_dotenv()
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -167,7 +168,7 @@ def getSubmissionURL(problem) -> str:
 def getLanguage(problem) -> str:
   return(problem["language"])
 
-def getDifficulty(problemModels, problem) -> int | None:
+def getDifficulty(problemModels, problem) -> Union[int, None]:
   difficulty = problemModels.get(problem["problem_id"], {}).get("difficulty", None)
   if (difficulty is None):
     return(difficulty)
@@ -175,7 +176,7 @@ def getDifficulty(problemModels, problem) -> int | None:
     difficulty = round(difficulty if difficulty >= 400 else 400 / math.exp(1.0 - difficulty / 400))
     return(difficulty)
 
-def getRateColor(difficulty : int | None) -> Color:
+def getRateColor(difficulty : Union[int, None]) -> Color:
   if (difficulty is None):
     return(Color("不明", 0x000000))
   colors = {
