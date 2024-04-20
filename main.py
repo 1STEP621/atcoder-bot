@@ -8,12 +8,22 @@ import pickle
 import datetime
 import requests
 from dotenv import load_dotenv
+
 load_dotenv()
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-MY_GUILD = discord.Object(id=1121061974944518244)
+JST = datetime.timezone(datetime.timedelta(hours=+9), 'JST')
+class Color:
+  def __init__(self, name: str, color: int):
+    self.name = name
+    self.color = color
+class Settings:
+  def __init__(self, channel: str, registeredUser: list[str]):
+    self.channel = channel
+    self.registeredUser = registeredUser
 
+MY_GUILD = discord.Object(id=1121061974944518244)
 class MyClient(discord.Client):
   def __init__(self, *, intents: discord.Intents):
     super().__init__(intents=intents)
@@ -22,20 +32,15 @@ class MyClient(discord.Client):
   async def setup_hook(self):
     self.tree.copy_global_to(guild=MY_GUILD)
     await self.tree.sync(guild=MY_GUILD)
-
 intents = discord.Intents.default()
 client = MyClient(intents=intents)
-settings = {
-    "channel": 0,
-    "registeredUser": [],
-}
 
-JST = datetime.timezone(datetime.timedelta(hours=+9), 'JST')
-
+settings = Settings(0, [])
 if os.path.exists('settings.pkl'):
   with open('settings.pkl', 'rb') as f:
     settings = pickle.load(f)
-    print(f'Restored Settings:\n{json.dumps(settings, indent=2)}')
+    assert isinstance(settings, Settings)
+    print(f'Restored Settings:\n{vars(settings)}')
 
 @client.event
 async def on_ready():
@@ -47,26 +52,26 @@ async def on_ready():
 async def channel(interaction: discord.Interaction):
   """メッセージを送信するチャンネルを設定します。"""
   print(f'Channel Selected: {interaction.channel.id}')
-  settings["channel"] = interaction.channel.id
+  settings.channel = interaction.channel.id
   with open('settings.pkl', 'wb') as f:
     pickle.dump(settings, f)
   await interaction.response.send_message('チャンネルを設定しました。')
 
 @client.tree.command()
-async def register(interaction: discord.Interaction, users: str):
+async def register(interaction: discord.Interaction, usernames: str):
   """AtCoderのユーザー名を登録します。カンマ区切りで複数人指定できます。"""
-  for user in users.split(","):
+  for user in usernames.split(","):
     print(f'User Registered: {user.strip()}')
-    settings["registeredUser"].append(user.strip())
+    settings.registeredUser.append(user.strip())
   with open('settings.pkl', 'wb') as f:
     pickle.dump(settings, f)
-  await interaction.response.send_message(f'ユーザー({users})を登録しました。')
+  await interaction.response.send_message(f'ユーザー({usernames})を登録しました。')
 
 @client.tree.command()
 async def unregister(interaction: discord.Interaction, username: str):
   """AtCoderのユーザー名を登録解除します。"""
   print(f'User Unregistered: {username}')
-  settings["registeredUser"].remove(username)
+  settings.registeredUser.remove(username)
   with open('settings.pkl', 'wb') as f:
     pickle.dump(settings, f)
   await interaction.response.send_message(f'ユーザー({username})を登録解除しました。')
@@ -74,21 +79,22 @@ async def unregister(interaction: discord.Interaction, username: str):
 @client.tree.command()
 async def registerlist(interaction: discord.Interaction):
   """登録されているユーザーの一覧を表示します。"""
-  await interaction.response.send_message(f'登録されているユーザーの一覧です。\n{", ".join(settings["registeredUser"])}')
+  await interaction.response.send_message(f'登録されているユーザーの一覧です。\n{", ".join(settings.registeredUser)}')
+  
+@client.tree.command()
+async def run(interaction: discord.Interaction):
+  """即時実行します。"""
+  await interaction.response.defer()
+  await check()
+  await interaction.followup.send("完了！")
 
 time = datetime.time(hour=0, minute=0, second=0, tzinfo=JST)
 @tasks.loop(time=time)
 async def schedule():
   await check()
-  
-@client.tree.command()
-async def run(interaction: discord.Interaction):
-  await interaction.response.defer()
-  await check()
-  await interaction.followup.send("完了!")
 
 async def check():
-  channel = client.get_channel(settings["channel"])
+  channel = client.get_channel(settings.channel)
   searchTime = int((datetime.datetime.now(JST) - datetime.timedelta(days=1)).timestamp())
 
   problemModels = {}
@@ -116,7 +122,7 @@ async def check():
     return
 
   isMessageSent = False
-  for user in settings["registeredUser"]:
+  for user in settings.registeredUser:
     submissions = []
     url = f'https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={user}&from_second={searchTime}'
     print(f'Accessing: {url}')
@@ -138,79 +144,53 @@ async def check():
       embed = discord.Embed(title=f'{user}さんが昨日ACした問題', url=f'https://atcoder.jp/users/{user}')
       highestDiff = 0
       for accept in accepts:
-        embed.add_field(name=getTitle(problemInformations, accept), value=f'Diff: {getDifficultyAndRateColor(problemModels, accept)} | [提出]({getSubmissionURL(accept)})', inline=True)
-        if (getDifficulty(problemModels, accept) > highestDiff):
+        informations = ' | '.join([
+          f'Diff: {getDifficulty(problemModels, accept)}({getRateColor(getDifficulty(problemModels, accept)).name})',
+          f'{getLanguage(accept)}',
+          f'[提出]({getSubmissionURL(accept)})'
+        ])
+        embed.add_field(name=getTitle(problemInformations, accept), value=informations, inline=False)
+        if ((getDifficulty(problemModels, accept) or 0) > highestDiff):
           highestDiff = getDifficulty(problemModels, accept)
-      embed.color = getRateColor(highestDiff)["color"]
+      embed.color = getRateColor(highestDiff).color
       await channel.send(embed=embed)
   if isMessageSent == False:
     await channel.send("今日は誰もACしませんでした。")
   print("Message sent successfully")
 
-def getTitle(problemInformations, problem):
+def getTitle(problemInformations, problem) -> str:
   return next(filter(lambda x: x["id"] == problem["problem_id"], problemInformations), {}).get("title", problem["problem_id"])
 
-def getSubmissionURL(problem):
+def getSubmissionURL(problem) -> str:
   return(f'https://atcoder.jp/contests/{problem["contest_id"]}/submissions/{problem["id"]}')
 
-def getDifficulty(problemModels, problem):
-  difficulty = problemModels.get(problem["problem_id"], {}).get("difficulty", "不明")
-  if (difficulty == "不明"):
+def getLanguage(problem) -> str:
+  return(problem["language"])
+
+def getDifficulty(problemModels, problem) -> int | None:
+  difficulty = problemModels.get(problem["problem_id"], {}).get("difficulty", None)
+  if (difficulty is None):
     return(difficulty)
   else:
     difficulty = round(difficulty if difficulty >= 400 else 400 / math.exp(1.0 - difficulty / 400))
     return(difficulty)
 
-def getRateColor(difficulty):
-  if (type(difficulty) != int):
-    return("不明")
+def getRateColor(difficulty : int | None) -> Color:
+  if (difficulty is None):
+    return(Color("不明", 0x000000))
   colors = {
-    2800: {
-      "name": "赤",
-      "color": 0xff0000,
-    },
-    2400: {
-      "name": "橙",
-      "color": 0xff8000,
-    },
-    2000: {
-      "name": "黄",
-      "color": 0xc0c000,
-    },
-    1600: {
-      "name": "青",
-      "color": 0x0000ff,
-    },
-    1200: {
-      "name": "水",
-      "color": 0x00c0c0,
-    },
-    800: {
-      "name": "緑",
-      "color": 0x008000,
-    },
-    400: {
-      "name": "茶",
-      "color": 0x804000,
-    },
-    0: {
-      "name": "灰",
-      "color": 0x808080,
-    },
+    2800: Color("赤", 0xff0000),
+    2400: Color("橙", 0xff8000),
+    2000: Color("黄", 0xc0c000),
+    1600: Color("青", 0x0000ff),
+    1200: Color("水", 0x00c0c0),
+    800: Color("緑", 0x008000),
+    400: Color("茶", 0x804000),
+    0: Color("灰", 0x808080),
   }
   for rate in colors.keys():
     if difficulty >= rate:
       return(colors[rate])
-  return({
-    "name": "不明",
-    "color": 0x000000,
-  })
-
-def getDifficultyAndRateColor(problemModels, problem):
-  difficulty = getDifficulty(problemModels, problem)
-  if (difficulty == "不明"):
-    return(difficulty)
-  else:
-    return(f'{difficulty}({getRateColor(difficulty)["name"]})')
+  return(Color("不明", 0x000000))
 
 client.run(os.getenv("TOKEN"))
