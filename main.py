@@ -145,7 +145,7 @@ async def check():
       highestDiff = 0
       for accept in accepts:
         informations = ' | '.join([
-          f'Diff: {getDifficulty(problemModels, accept)}({getRateColor(getDifficulty(problemModels, accept)).name})',
+          f'Diff: {getDifficulty(problemModels, accept) or "不明"}({getRateColor(getDifficulty(problemModels, accept)).name})',
           f'{getLanguage(accept)}',
           f'[提出]({getSubmissionURL(accept)})'
         ])
