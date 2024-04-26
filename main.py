@@ -9,7 +9,6 @@ import datetime
 import requests
 from dotenv import load_dotenv
 from typing import Union
-from keep_alive import keep_alive
 
 load_dotenv()
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -195,5 +194,4 @@ def getRateColor(difficulty : Union[int, None]) -> Color:
       return(colors[rate])
   return(Color("不明", 0x000000))
 
-keep_alive()
 client.run(os.getenv("TOKEN"))
