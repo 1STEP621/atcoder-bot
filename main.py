@@ -157,7 +157,7 @@ async def check():
   if embeds == []:
     await channel.send("昨日は誰もACしませんでした。")
   else:
-    channel.send(embeds=embeds)
+    await channel.send(embeds=embeds)
   print("Message sent successfully")
 
 def getTitle(problemInformations, problem) -> str:
