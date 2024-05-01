@@ -122,7 +122,7 @@ async def check():
     print("Failure!")
     return
 
-  isMessageSent = False
+  embeds = []
   for user in settings.registeredUser:
     submissions = []
     url = f'https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={user}&from_second={searchTime}'
@@ -141,7 +141,6 @@ async def check():
       print("No Accepts")
       continue
     else:
-      isMessageSent = True
       embed = discord.Embed(title=f'{user}さんが昨日ACした問題', url=f'https://atcoder.jp/users/{user}')
       highestDiff = 0
       for accept in accepts:
@@ -154,9 +153,11 @@ async def check():
         if ((getDifficulty(problemModels, accept) or 0) > highestDiff):
           highestDiff = getDifficulty(problemModels, accept)
       embed.color = getRateColor(highestDiff).color
-      await channel.send(embed=embed)
-  if isMessageSent == False:
-    await channel.send("今日は誰もACしませんでした。")
+      embeds.append(embed)
+  if embeds == []:
+    await channel.send("昨日は誰もACしませんでした。")
+  else:
+    channel.send(embeds=embeds)
   print("Message sent successfully")
 
 def getTitle(problemInformations, problem) -> str:
