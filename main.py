@@ -9,10 +9,12 @@ import datetime
 import requests
 from dotenv import load_dotenv
 from typing import Union
+from setproctitle import setproctitle
 
 load_dotenv()
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
+setproctitle('AtCoderBot')
 
 JST = datetime.timezone(datetime.timedelta(hours=+9), 'JST')
 class Color:
