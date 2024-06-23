@@ -3,6 +3,7 @@ from discord import app_commands
 from discord.ext import tasks
 import json
 import os
+import re
 import math
 import pickle
 import datetime
@@ -147,8 +148,8 @@ async def check():
       highestDiff = 0
       for accept in accepts:
         informations = ' | '.join([
-          f'Diff: {getDifficulty(problemModels, accept) or "不明"}({getRateColor(getDifficulty(problemModels, accept)).name})',
-          f'{getLanguage(accept)}',
+          f'{getDifficulty(problemModels, accept) or "不明"}({getRateColor(getDifficulty(problemModels, accept)).name})',
+          f'{removeParentheses(getLanguage(accept)).strip()}',
           f'[提出]({getSubmissionURL(accept)})'
         ])
         embed.add_field(name=getTitle(problemInformations, accept), value=informations, inline=False)
@@ -196,5 +197,8 @@ def getRateColor(difficulty : Union[int, None]) -> Color:
     if difficulty >= rate:
       return(colors[rate])
   return(Color("不明", 0x000000))
+
+def removeParentheses(string: str) -> str:
+  return re.sub(r'\(.*?\)', '', string)
 
 client.run(os.getenv("TOKEN"))
