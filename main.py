@@ -44,18 +44,18 @@ if os.path.exists('settings.pkl'):
   with open('settings.pkl', 'rb') as f:
     settings = pickle.load(f)
     assert isinstance(settings, Settings)
-    print(f'Restored Settings:\n{vars(settings)}')
+    print(f'Restored Settings:\n{vars(settings)}', flush=True)
 
 @client.event
 async def on_ready():
-  print(f'Logged in as {client.user} (ID: {client.user.id})')
-  print('------')
+  print(f'Logged in as {client.user} (ID: {client.user.id})', flush=True)
+  print('------', flush=True)
   schedule.start()
 
 @client.tree.command()
 async def channel(interaction: discord.Interaction):
   """メッセージを送信するチャンネルを設定します。"""
-  print(f'Channel Selected: {interaction.channel.id}')
+  print(f'Channel Selected: {interaction.channel.id}', flush=True)
   settings.channel = interaction.channel.id
   with open('settings.pkl', 'wb') as f:
     pickle.dump(settings, f)
@@ -65,7 +65,7 @@ async def channel(interaction: discord.Interaction):
 async def register(interaction: discord.Interaction, usernames: str):
   """AtCoderのユーザー名を登録します。カンマ区切りで複数人指定できます。"""
   for user in usernames.split(","):
-    print(f'User Registered: {user.strip()}')
+    print(f'User Registered: {user.strip()}', flush=True)
     settings.registeredUser.append(user.strip())
   with open('settings.pkl', 'wb') as f:
     pickle.dump(settings, f)
@@ -74,7 +74,7 @@ async def register(interaction: discord.Interaction, usernames: str):
 @client.tree.command()
 async def unregister(interaction: discord.Interaction, username: str):
   """AtCoderのユーザー名を登録解除します。"""
-  print(f'User Unregistered: {username}')
+  print(f'User Unregistered: {username}', flush=True)
   settings.registeredUser.remove(username)
   with open('settings.pkl', 'wb') as f:
     pickle.dump(settings, f)
@@ -103,45 +103,45 @@ async def check():
 
   problemModels = {}
   url = "https://kenkoooo.com/atcoder/resources/problem-models.json"
-  print(f'Accessing: {url}')
+  print(f'Accessing: {url}', flush=True)
   problemModelsResponse = requests.get(url)
   if problemModelsResponse.status_code == 200:
-    print("Success!")
+    print("Success!", flush=True)
     problemModels = problemModelsResponse.json()
   else:
     await channel.send("Difficultyデータにアクセスできませんでした。")
-    print("Failure!")
+    print("Failure!", flush=True)
     return
   
   problemInformations = {}
   url = "https://kenkoooo.com/atcoder/resources/problems.json"
-  print(f'Accessing: {url}')
+  print(f'Accessing: {url}', flush=True)
   problemInformationsResponse = requests.get(url)
   if problemInformationsResponse.status_code == 200:
-    print("Success!")
+    print("Success!", flush=True)
     problemInformations = problemInformationsResponse.json()
   else:
     await channel.send("問題の情報データにアクセスできませんでした。")
-    print("Failure!")
+    print("Failure!", flush=True)
     return
 
   embeds = []
   for user in settings.registeredUser:
     submissions = []
     url = f'https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={user}&from_second={searchTime}'
-    print(f'Accessing: {url}')
+    print(f'Accessing: {url}', flush=True)
     submissionsResponse = requests.get(url)
     if submissionsResponse.status_code == 200:
       submissions = submissionsResponse.json()
-      print(f'Result:\n{json.dumps(submissions, indent=2)}')
+      print(f'Result:\n{json.dumps(submissions, indent=2)}', flush=True)
     else:
       await channel.send(f'{user}: 提出データにアクセスできませんでした。')
-      print(f'Failure!')
+      print(f'Failure!', flush=True)
       continue
 
     accepts = list(filter(lambda x: x["result"] == "AC", submissions))
     if accepts == []:
-      print("No Accepts")
+      print("No Accepts", flush=True)
       continue
     else:
       embed = discord.Embed(title=f'{user}さんが昨日ACした問題', url=f'https://atcoder.jp/users/{user}')
@@ -161,7 +161,7 @@ async def check():
     await channel.send("昨日は誰もACしませんでした。")
   else:
     await channel.send(embeds=embeds)
-  print("Message sent successfully")
+  print("Message sent successfully", flush=True)
 
 def getTitle(problemInformations, problem) -> str:
   return next(filter(lambda x: x["id"] == problem["problem_id"], problemInformations), {}).get("title", problem["problem_id"])
