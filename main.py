@@ -155,12 +155,12 @@ async def check():
         if ((getDifficulty(problemModels, accept) or 0) > highestDiff):
           highestDiff = getDifficulty(problemModels, accept)
         embed.add_field(name=getTitle(problemInformations, accept), value=informations, inline=False)
-        if (idx % 25 == 0):
+        if (idx % 25 == 24):
           embed.color = getRateColor(highestDiff).color
           embeds.append(embed)
           embed = discord.Embed(title=f'{user}さんが昨日ACした問題', url=f'https://atcoder.jp/users/{user}')
           highestDiff = 0
-      if (len(accepts) % 25):
+      if (len(accepts) % 25 != 24):
         embed.color = getRateColor(highestDiff).color
         embeds.append(embed)
   if embeds == []:
