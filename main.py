@@ -156,7 +156,7 @@ async def check():
           embed.add_field(name=getTitle(problemInformations, accept), value=informations, inline=False)
         else:
           embed.remove_field(-1)
-          embed.add_field(name=f"他{idx - 24}問", value=f'...')
+          embed.add_field(name=f"他{idx - 24 + 1}問", value=f'...')
         if ((getDifficulty(problemModels, accept) or 0) > highestDiff):
           highestDiff = getDifficulty(problemModels, accept)
       embed.color = getRateColor(highestDiff).color
