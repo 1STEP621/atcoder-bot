@@ -145,28 +145,26 @@ async def check():
       continue
     else:
       embed = discord.Embed(title=f'{user}さんが昨日ACした問題', url=f'https://atcoder.jp/users/{user}')
-      highestDiff = 0
+      highestColor = getRateColor(max(map(lambda x: getDifficulty(problemModels, x), accepts), key=lambda x: x or 0))
       for idx, accept in enumerate(accepts):
         informations = ' | '.join([
           f'{getDifficulty(problemModels, accept) or "不明"}({getRateColor(getDifficulty(problemModels, accept)).name})',
           f'{removeParentheses(getLanguage(accept)).strip()}',
           f'[提出]({getSubmissionURL(accept)})'
         ])
-        if ((getDifficulty(problemModels, accept) or 0) > highestDiff):
-          highestDiff = getDifficulty(problemModels, accept)
         embed.add_field(name=getTitle(problemInformations, accept), value=informations, inline=False)
         if (idx % 25 == 24):
-          embed.color = getRateColor(highestDiff).color
+          embed.color = highestColor.color
           embeds.append(embed)
-          embed = discord.Embed(title=f'{user}さんが昨日ACした問題', url=f'https://atcoder.jp/users/{user}')
-          highestDiff = 0
-      if (len(accepts) % 25 != 24):
-        embed.color = getRateColor(highestDiff).color
+          embed = discord.Embed(title=f'{user}さんが昨日ACした問題 ({idx // 25 + 2})', url=f'https://atcoder.jp/users/{user}')
+      if (embed.fields != []):
+        embed.color = highestColor.color
         embeds.append(embed)
   if embeds == []:
     await channel.send("昨日は誰もACしませんでした。")
   else:
-    await channel.send(embeds=embeds)
+    for embed in embeds:
+      await channel.send(embed=embed)
   print("Message sent successfully", flush=True)
 
 def getTitle(problemInformations, problem) -> str:
