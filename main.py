@@ -27,7 +27,7 @@ class Settings:
     self.channel = channel
     self.registeredUser = registeredUser
 
-MY_GUILD = discord.Object(id=1121061974944518244)
+MY_GUILD = discord.Object(id=926382400135647262)
 class MyClient(discord.Client):
   def __init__(self, *, intents: discord.Intents):
     super().__init__(intents=intents)
@@ -146,13 +146,17 @@ async def check():
     else:
       embed = discord.Embed(title=f'{user}さんが昨日ACした問題', url=f'https://atcoder.jp/users/{user}')
       highestDiff = 0
-      for accept in accepts:
+      for idx, accept in enumerate(accepts):
         informations = ' | '.join([
           f'{getDifficulty(problemModels, accept) or "不明"}({getRateColor(getDifficulty(problemModels, accept)).name})',
           f'{removeParentheses(getLanguage(accept)).strip()}',
           f'[提出]({getSubmissionURL(accept)})'
         ])
-        embed.add_field(name=getTitle(problemInformations, accept), value=informations, inline=False)
+        if (idx < 25):
+          embed.add_field(name=getTitle(problemInformations, accept), value=informations, inline=False)
+        else:
+          embed.remove_field(-1)
+          embed.add_field(name=f"他{idx - 24}問", value=f'...')
         if ((getDifficulty(problemModels, accept) or 0) > highestDiff):
           highestDiff = getDifficulty(problemModels, accept)
       embed.color = getRateColor(highestDiff).color
