@@ -27,7 +27,7 @@ class Settings:
     self.channel = channel
     self.registeredUser = registeredUser
 
-MY_GUILD = discord.Object(id=926382400135647262)
+MY_GUILD = discord.Object(id=1121061974944518244)
 class MyClient(discord.Client):
   def __init__(self, *, intents: discord.Intents):
     super().__init__(intents=intents)
