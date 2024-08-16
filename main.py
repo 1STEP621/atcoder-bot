@@ -152,15 +152,17 @@ async def check():
           f'{removeParentheses(getLanguage(accept)).strip()}',
           f'[提出]({getSubmissionURL(accept)})'
         ])
-        if (idx < 25):
-          embed.add_field(name=getTitle(problemInformations, accept), value=informations, inline=False)
-        else:
-          embed.remove_field(-1)
-          embed.add_field(name=f"他{idx - 24 + 1}問", value=f'...')
         if ((getDifficulty(problemModels, accept) or 0) > highestDiff):
           highestDiff = getDifficulty(problemModels, accept)
-      embed.color = getRateColor(highestDiff).color
-      embeds.append(embed)
+        embed.add_field(name=getTitle(problemInformations, accept), value=informations, inline=False)
+        if (idx % 25 == 24):
+          embed.color = getRateColor(highestDiff).color
+          embeds.append(embed)
+          embed = discord.Embed(title=f'{user}さんが昨日ACした問題', url=f'https://atcoder.jp/users/{user}')
+          highestDiff = 0
+      if (len(accepts) % 25 != 24):
+        embed.color = getRateColor(highestDiff).color
+        embeds.append(embed)
   if embeds == []:
     await channel.send("昨日は誰もACしませんでした。")
   else:
